@@ -13,7 +13,7 @@
 from util import *
 
 # Tests the result of 'mbed remove'
-def test_remove(mbed, testrepos):
+def test_remove(mbed, _):
     with cd('test1'):
         popen(['python', mbed, 'remove', 'test2'])
 
