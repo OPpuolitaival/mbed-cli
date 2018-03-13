@@ -19,6 +19,7 @@ import subprocess
 import shutil
 import yaml
 
+
 def rmtree_readonly(directory):
     def remove_readonly(func, path, _):
         os.chmod(path, stat.S_IWRITE)
@@ -26,11 +27,12 @@ def rmtree_readonly(directory):
 
     shutil.rmtree(directory, onerror=remove_readonly)
 
+
 tests = None
 with open("circle.yml", "r") as f:
     types = yaml.load_all(f)
     for t in types:
-        for k,v in t.items():
+        for k, v in t.items():
             if k == 'test':
                 tests = v['override']
 

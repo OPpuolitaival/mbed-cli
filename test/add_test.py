@@ -12,6 +12,7 @@
 
 from util import *
 
+
 # Tests the result of 'mbed add'
 def test_add(mbed, testrepos):
     test3 = testrepos[2]
@@ -27,6 +28,7 @@ def test_add(mbed, testrepos):
         "`- test3",
         "   `- test4",
     ])
+
 
 # Tests if a repo can be imported correctly after 'mbed add'
 def test_import_after_add(mbed, testrepos):

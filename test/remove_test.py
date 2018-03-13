@@ -12,6 +12,7 @@
 
 from util import *
 
+
 # Tests the result of 'mbed remove'
 def test_remove(mbed, _):
     with cd('test1'):
@@ -20,6 +21,7 @@ def test_remove(mbed, _):
     assertls(mbed, 'test1', [
         "test1",
     ])
+
 
 # Tests if a repo can be imported correctly after 'mbed remove'
 def test_import_after_remove(mbed, testrepos):

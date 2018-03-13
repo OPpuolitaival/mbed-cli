@@ -35,7 +35,6 @@ import zipfile
 import argparse
 import tempfile
 
-
 # Application version
 ver = '1.4.0'
 
@@ -97,7 +96,7 @@ ignores = [
     # Python
     "*.py[cod]",
     "# subrepo ignores",
-    ]
+]
 
 # reference to local (unpublished) repo - dir#rev
 regex_local_ref = r'^([\w.+-][\w./+-]*?)/?(?:#(.*))?$'
@@ -138,26 +137,32 @@ cache_repositories = True
 cwd_root = ""
 _cwd = os.getcwd()
 
+
 # Logging and output
 def log(msg):
     sys.stdout.write(msg)
 
+
 def message(msg):
     return "[mbed] %s\n" % msg
+
 
 def info(msg, level=1):
     if level <= 0 or verbose:
         for line in msg.splitlines():
             log(message(line))
 
+
 def action(msg):
     for line in msg.splitlines():
         log(message(line))
+
 
 def warning(msg):
     for line in msg.splitlines():
         sys.stderr.write("[mbed] WARNING: %s\n" % line)
     sys.stderr.write("---\n")
+
 
 def error(msg, code=-1):
     for line in msg.splitlines():
@@ -165,37 +170,46 @@ def error(msg, code=-1):
     sys.stderr.write("---\n")
     sys.exit(code)
 
+
 def progress_cursor():
     while True:
         for cursor in '|/-\\':
             yield cursor
 
+
 progress_spinner = progress_cursor()
+
 
 def progress():
     sys.stdout.write(progress_spinner.next())
     sys.stdout.flush()
     sys.stdout.write('\b')
 
+
 def show_progress(title, percent, max_width=80):
     if sys.stdout.isatty():
         percent = round(float(percent), 2)
         show_percent = '%.2f' % percent
-        bwidth = max_width - len(str(title)) - len(show_percent) - 6 # 6 equals the spaces and paddings between title, progress bar and percentage
-        sys.stdout.write('%s |%s%s| %s%%\r' % (str(title), '#' * int(percent * bwidth // 100), '-' * (bwidth - int(percent * bwidth // 100)), show_percent))
+        bwidth = max_width - len(str(title)) - len(
+            show_percent) - 6  # 6 equals the spaces and paddings between title, progress bar and percentage
+        sys.stdout.write('%s |%s%s| %s%%\r' % (
+        str(title), '#' * int(percent * bwidth // 100), '-' * (bwidth - int(percent * bwidth // 100)), show_percent))
         sys.stdout.flush()
+
 
 def hide_progress(max_width=80):
     if sys.stdout.isatty():
         sys.stdout.write("\r%s\r" % (' ' * max_width))
 
+
 # Process execution
 class ProcessException(Exception):
     pass
 
+
 def popen(command, stdin=None, **kwargs):
     # print for debugging
-    info('Exec "'+' '.join(command)+'" in '+getcwd())
+    info('Exec "' + ' '.join(command) + '" in ' + getcwd())
     proc = None
     try:
         proc = subprocess.Popen(command, **kwargs)
@@ -203,23 +217,26 @@ def popen(command, stdin=None, **kwargs):
         if e[0] == errno.ENOENT:
             error(
                 "Could not execute \"%s\".\n"
-                "Please verify that it's installed and accessible from your current path by executing \"%s\".\n" % (command[0], command[0]), e[0])
+                "Please verify that it's installed and accessible from your current path by executing \"%s\".\n" % (
+                command[0], command[0]), e[0])
         else:
             raise e
 
     if proc and proc.wait() != 0:
         raise ProcessException(proc.returncode, command[0], ' '.join(command), getcwd())
 
+
 def pquery(command, output_callback=None, stdin=None, **kwargs):
     if very_verbose:
-        info('Query "'+' '.join(command)+'" in '+getcwd())
+        info('Query "' + ' '.join(command) + '" in ' + getcwd())
     try:
         proc = subprocess.Popen(command, bufsize=0, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     except OSError as e:
         if e[0] == errno.ENOENT:
             error(
                 "Could not execute \"%s\".\n"
-                "Please verify that it's installed and accessible from your current path by executing \"%s\".\n" % (command[0], command[0]), e[0])
+                "Please verify that it's installed and accessible from your current path by executing \"%s\".\n" % (
+                command[0], command[0]), e[0])
         else:
             raise e
 
@@ -240,12 +257,13 @@ def pquery(command, output_callback=None, stdin=None, **kwargs):
     stdout, _ = proc.communicate(stdin)
 
     if very_verbose:
-        log(str(stdout).strip()+"\n")
+        log(str(stdout).strip() + "\n")
 
     if proc.returncode != 0:
         raise ProcessException(proc.returncode, command[0], ' '.join(command), getcwd())
 
     return stdout
+
 
 def rmtree_readonly(directory):
     if os.path.islink(directory):
@@ -254,6 +272,7 @@ def rmtree_readonly(directory):
         def remove_readonly(func, path, _):
             os.chmod(path, stat.S_IWRITE)
             func(path)
+
         shutil.rmtree(directory, onerror=remove_readonly)
 
 
@@ -270,12 +289,14 @@ def cd(newdir):
         os.chdir(prevdir)
         _cwd = prevdir
 
+
 def getcwd():
     global _cwd
     return _cwd
 
+
 def relpath(root, path):
-    return path[len(root)+1:]
+    return path[len(root) + 1:]
 
 
 def staticclass(cls):
@@ -288,11 +309,15 @@ def staticclass(cls):
 
 # Handling for multiple version controls
 scms = {}
+
+
 def scm(name):
     def _scm(cls):
         scms[name] = cls()
         return cls
+
     return _scm
+
 
 # pylint: disable=no-self-argument, no-method-argument, no-member, no-self-use, unused-argument
 @scm('bld')
@@ -329,12 +354,12 @@ class Bld(object):
         try:
             Bld.init(path)
             with cd(path):
-                Bld.seturl(url+'/tip')
+                Bld.seturl(url + '/tip')
         except Exception as e:
             error(e[1], e[0])
 
     def fetch_rev(url, rev):
-        rev_file = os.path.join('.'+Bld.name, '.rev-' + rev + '.zip')
+        rev_file = os.path.join('.' + Bld.name, '.rev-' + rev + '.zip')
         try:
             if not os.path.exists(rev_file):
                 action("Downloading library build \"%s\" (might take a minute)" % rev)
@@ -348,7 +373,7 @@ class Bld(object):
             raise Exception(128, "Download failed!\nPlease try again later.")
 
     def unpack_rev(rev):
-        rev_file = os.path.join('.'+Bld.name, '.rev-' + rev + '.zip')
+        rev_file = os.path.join('.' + Bld.name, '.rev-' + rev + '.zip')
         try:
             with zipfile.ZipFile(rev_file) as zf:
                 action("Unpacking library build \"%s\" in \"%s\"" % (rev, getcwd()))
@@ -356,7 +381,8 @@ class Bld(object):
         except:
             if os.path.isfile(rev_file):
                 os.remove(rev_file)
-            raise Exception(128, "An error occurred while unpacking library archive \"%s\" in \"%s\"" % (rev_file, getcwd()))
+            raise Exception(128,
+                            "An error occurred while unpacking library archive \"%s\" in \"%s\"" % (rev_file, getcwd()))
 
     def checkout(rev, clean=False):
         url = Bld.geturl()
@@ -376,7 +402,7 @@ class Bld(object):
             info("Checkout \"%s\" in %s" % (rev, os.path.basename(getcwd())))
             try:
                 Bld.unpack_rev(rev)
-                Bld.seturl(url+'/'+rev)
+                Bld.seturl(url + '/' + rev)
             except Exception as e:
                 error(e[1], e[0])
 
@@ -388,10 +414,10 @@ class Bld(object):
 
     def seturl(url):
         info("Setting url to \"%s\" in %s" % (url, getcwd()))
-        if not os.path.exists('.'+Bld.name):
-            os.mkdir('.'+Bld.name)
+        if not os.path.exists('.' + Bld.name):
+            os.mkdir('.' + Bld.name)
 
-        fl = os.path.join('.'+Bld.name, 'bldrc')
+        fl = os.path.join('.' + Bld.name, 'bldrc')
         try:
             with open(fl, 'w') as f:
                 f.write(url)
@@ -402,7 +428,7 @@ class Bld(object):
         with open(os.path.join('.bld', 'bldrc')) as f:
             url = f.read().strip()
         m = Bld.isurl(url)
-        return m.group(1)+'/builds' if m else ''
+        return m.group(1) + '/builds' if m else ''
 
     def getrev():
         with open(os.path.join('.bld', 'bldrc')) as f:
@@ -440,9 +466,11 @@ class Hg(object):
 
     def clone(url, name=None, depth=None, protocol=None):
         if verbose or very_verbose:
-            popen([hg_cmd, 'clone', formaturl(url, protocol), name] + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+            popen([hg_cmd, 'clone', formaturl(url, protocol), name] + (
+                ['-v'] if very_verbose else ([] if verbose else ['-q'])))
         else:
-            pquery([hg_cmd, 'clone', '--config', 'progress.assume-tty=true', formaturl(url, protocol), name], output_callback=Hg.action_progress)
+            pquery([hg_cmd, 'clone', '--config', 'progress.assume-tty=true', formaturl(url, protocol), name],
+                   output_callback=Hg.action_progress)
             hide_progress()
 
     def add(dest):
@@ -460,10 +488,12 @@ class Hg(object):
             pass
 
     def commit(msg=None):
-        popen([hg_cmd, 'commit'] + (['-m', msg] if msg else [])  + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+        popen([hg_cmd, 'commit'] + (['-m', msg] if msg else []) + (
+            ['-v'] if very_verbose else ([] if verbose else ['-q'])))
 
     def publish(all_refs=None):
-        popen([hg_cmd, 'push'] + (['--new-branch'] if all_refs else []) + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+        popen([hg_cmd, 'push'] + (['--new-branch'] if all_refs else []) + (
+            ['-v'] if very_verbose else ([] if verbose else ['-q'])))
 
     def fetch():
         info("Fetching revisions from remote repository to \"%s\"" % os.path.basename(getcwd()))
@@ -480,7 +510,8 @@ class Hg(object):
             for f in files:
                 info("Remove untracked file \"%s\"" % f)
                 os.remove(f)
-        popen([hg_cmd, 'update'] + (['-C'] if clean else []) + (['-r', rev] if rev else []) + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+        popen([hg_cmd, 'update'] + (['-C'] if clean else []) + (['-r', rev] if rev else []) + (
+            ['-v'] if very_verbose else ([] if verbose else ['-q'])))
 
     def update(rev=None, clean=False, clean_files=False, is_local=False):
         if not is_local:
@@ -520,14 +551,14 @@ class Hg(object):
 
         if tagpaths in lines:
             idx = lines.index(tagpaths)
-            m = re.match(r'^([\w_]+)\s*=\s*(.*)$', lines[idx+1])
+            m = re.match(r'^([\w_]+)\s*=\s*(.*)$', lines[idx + 1])
             if m:
                 remote = m.group(1)
-                del lines[idx+1]
-            lines.insert(idx, remote+' = '+url)
+                del lines[idx + 1]
+            lines.insert(idx, remote + ' = ' + url)
         else:
             lines.append(tagpaths)
-            lines.append(remote+' = '+url)
+            lines.append(remote + ' = ' + url)
 
     def geturl():
         tagpaths = '[paths]'
@@ -539,7 +570,7 @@ class Hg(object):
                 lines = f.read().splitlines()
                 if tagpaths in lines:
                     idx = lines.index(tagpaths)
-                    m = re.match(r'^([\w_]+)\s*=\s*(.*)$', lines[idx+1])
+                    m = re.match(r'^([\w_]+)\s*=\s*(.*)$', lines[idx + 1])
                     if m:
                         if m.group(1) == 'default':
                             default_url = m.group(2)
@@ -556,7 +587,7 @@ class Hg(object):
     def getrev():
         if os.path.isfile(os.path.join('.hg', 'dirstate')):
             with open(os.path.join('.hg', 'dirstate'), 'rb') as f:
-                return ''.join('%02x'%ord(i) for i in f.read(6))
+                return ''.join('%02x' % ord(i) for i in f.read(6))
         else:
             return ""
 
@@ -596,7 +627,7 @@ class Hg(object):
         Hg.hgrc()
         try:
             with open(Hg.ignore_file, 'w') as f:
-                f.write("syntax: glob\n"+'\n'.join(ignores)+'\n')
+                f.write("syntax: glob\n" + '\n'.join(ignores) + '\n')
         except IOError:
             error("Unable to write ignore file in \"%s\"" % os.path.join(getcwd(), Hg.ignore_file), 1)
 
@@ -660,41 +691,45 @@ class Git(object):
 
     def cleanup():
         info("Cleaning up Git index")
-        pquery([git_cmd, 'checkout', '--detach', 'HEAD'] + ([] if very_verbose else ['-q'])) # detach head so local branches are deletable
+        pquery([git_cmd, 'checkout', '--detach', 'HEAD'] + (
+            [] if very_verbose else ['-q']))  # detach head so local branches are deletable
         branches = []
-        lines = pquery([git_cmd, 'branch']).strip().splitlines() # fetch all local branches
+        lines = pquery([git_cmd, 'branch']).strip().splitlines()  # fetch all local branches
         for line in lines:
             if re.match(r'^\*?\s+\((.+)\)$', line):
                 continue
             line = re.sub(r'\s+', '', line)
             branches.append(line)
 
-        for branch in branches: # delete all local branches so the new repo clone is not poluted
+        for branch in branches:  # delete all local branches so the new repo clone is not poluted
             pquery([git_cmd, 'branch', '-D', branch])
 
     def clone(url, name=None, depth=None, protocol=None):
         if verbose or very_verbose:
-            popen([git_cmd, 'clone', formaturl(url, protocol), name] + (['--depth', depth] if depth else []) + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+            popen([git_cmd, 'clone', formaturl(url, protocol), name] + (['--depth', depth] if depth else []) + (
+                ['-v'] if very_verbose else ([] if verbose else ['-q'])))
         else:
-            pquery([git_cmd, 'clone', '--progress', formaturl(url, protocol), name] + (['--depth', depth] if depth else []), output_callback=Git.action_progress)
+            pquery([git_cmd, 'clone', '--progress', formaturl(url, protocol), name] + (
+                ['--depth', depth] if depth else []), output_callback=Git.action_progress)
             hide_progress()
 
     def add(dest):
-        info("Adding reference "+dest)
+        info("Adding reference " + dest)
         try:
             popen([git_cmd, 'add', dest] + (['-v'] if very_verbose else []))
         except ProcessException:
             pass
 
     def remove(dest):
-        info("Removing reference "+dest)
+        info("Removing reference " + dest)
         try:
             pquery([git_cmd, 'rm', '-f', dest] + ([] if very_verbose else ['-q']))
         except ProcessException:
             pass
 
     def commit(msg=None):
-        popen([git_cmd, 'commit', '-a'] + (['-m', msg] if msg else []) + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
+        popen([git_cmd, 'commit', '-a'] + (['-m', msg] if msg else []) + (
+            ['-v'] if very_verbose else ([] if verbose else ['-q'])))
 
     def publish(all_refs=None):
         if all_refs:
@@ -705,11 +740,12 @@ class Git(object):
             if remote and branch:
                 popen([git_cmd, 'push', remote, branch] + (['-v'] if very_verbose else ([] if verbose else ['-q'])))
             else:
-                err = "Unable to publish outgoing changes for \"%s\" in \"%s\".\n" % (os.path.basename(getcwd()), getcwd())
+                err = "Unable to publish outgoing changes for \"%s\" in \"%s\".\n" % (
+                os.path.basename(getcwd()), getcwd())
                 if not remote:
-                    error(err+"The local repository is not associated with a remote one.", 1)
+                    error(err + "The local repository is not associated with a remote one.", 1)
                 if not branch:
-                    error(err+"Working set is not on a branch.", 1)
+                    error(err + "Working set is not on a branch.", 1)
 
     def fetch():
         info("Fetching revisions from remote repository to \"%s\"" % os.path.basename(getcwd()))
@@ -717,9 +753,10 @@ class Git(object):
 
     def discard(clean_files=False):
         info("Discarding local changes in \"%s\"" % os.path.basename(getcwd()))
-        pquery([git_cmd, 'reset', 'HEAD'] + ([] if very_verbose else ['-q'])) # unmarks files for commit
-        pquery([git_cmd, 'checkout', '.'] + ([] if very_verbose else ['-q'])) # undo  modified files
-        pquery([git_cmd, 'clean', '-fd'] + (['-x'] if clean_files else []) + (['-q'] if very_verbose else ['-q'])) # cleans up untracked files and folders
+        pquery([git_cmd, 'reset', 'HEAD'] + ([] if very_verbose else ['-q']))  # unmarks files for commit
+        pquery([git_cmd, 'checkout', '.'] + ([] if very_verbose else ['-q']))  # undo  modified files
+        pquery([git_cmd, 'clean', '-fd'] + (['-x'] if clean_files else []) + (
+            ['-q'] if very_verbose else ['-q']))  # cleans up untracked files and folders
 
     def merge(dest):
         info("Merging \"%s\" with \"%s\"" % (os.path.basename(getcwd()), dest))
@@ -731,13 +768,14 @@ class Git(object):
         info("Checkout \"%s\" in %s" % (rev, os.path.basename(getcwd())))
         branch = None
         refs = Git.getbranches(rev)
-        for ref in refs: # re-associate with a local or remote branch (rev is the same)
+        for ref in refs:  # re-associate with a local or remote branch (rev is the same)
             m = re.match(r'^(.*?)\/(.*?)$', ref)
-            if m and m.group(2) != "HEAD": # matches origin/<branch> and isn't HEAD ref
-                if not os.path.exists(os.path.join('.git', 'refs', 'heads', m.group(2))): # okay only if local branch with that name doesn't exist (git will checkout the origin/<branch> in that case)
+            if m and m.group(2) != "HEAD":  # matches origin/<branch> and isn't HEAD ref
+                if not os.path.exists(os.path.join('.git', 'refs', 'heads', m.group(
+                        2))):  # okay only if local branch with that name doesn't exist (git will checkout the origin/<branch> in that case)
                     branch = m.group(2)
             elif ref != "HEAD":
-                branch = ref # matches local branch and isn't HEAD ref
+                branch = ref  # matches local branch and isn't HEAD ref
 
             if branch:
                 info("Revision \"%s\" matches a branch \"%s\" reference. Re-associating with branch" % (rev, branch))
@@ -765,9 +803,9 @@ class Git(object):
             else:
                 err = "Unable to update \"%s\" in \"%s\"." % (os.path.basename(getcwd()), getcwd())
                 if not remote:
-                    info(err+" The local repository is not associated with a remote one.")
+                    info(err + " The local repository is not associated with a remote one.")
                 if not branch:
-                    info(err+" Working set is not on a branch.")
+                    info(err + " Working set is not on a branch.")
 
     def status():
         return pquery([git_cmd, 'status', '-s'] + (['-v'] if very_verbose else []))
@@ -837,7 +875,7 @@ class Git(object):
         remotes = Git.getremotes()
         for remote in remotes:
             url = remote[1]
-            if remote[0] == "origin": # Prefer origin URL
+            if remote[0] == "origin":  # Prefer origin URL
                 break
         return formaturl(url)
 
@@ -877,8 +915,8 @@ class Git(object):
             m = re.match(r'^(.+)\s+refs\/tags\/(.+)$', ref)
             if m:
                 t = m.group(2)
-                if re.match(r'^(.+)\^\{\}$', t): # detect tag "pointer"
-                    t = re.sub(r'\^\{\}$', '', t) # remove "pointer" chars, e.g. some-tag^{}
+                if re.match(r'^(.+)\^\{\}$', t):  # detect tag "pointer"
+                    t = re.sub(r'\^\{\}$', '', t)  # remove "pointer" chars, e.g. some-tag^{}
                     for tag in tags:
                         if tag[1] == t:
                             tags.remove(tag)
@@ -903,7 +941,7 @@ class Git(object):
                 os.mkdir(ignore_file_parent_directory)
 
             with open(Git.ignore_file, 'w') as f:
-                f.write('\n'.join(ignores)+'\n')
+                f.write('\n'.join(ignores) + '\n')
         except IOError:
             error("Unable to write ignore file in \"%s\"" % os.path.join(getcwd(), Git.ignore_file), 1)
 
@@ -924,6 +962,7 @@ class Git(object):
                     f.write(dest.replace("\\", "/") + '\n')
             except IOError:
                 error("Unable to write ignore file in \"%s\"" % os.path.join(getcwd(), Git.ignore_file), 1)
+
     def unignore(dest):
         try:
             with open(Git.ignore_file) as f:
@@ -983,7 +1022,7 @@ class Repo(object):
         elif m_bld_url:
             repo.name = os.path.basename(path or m_bld_url.group(7))
             repo.path = os.path.abspath(path or os.path.join(getcwd(), repo.name))
-            repo.url = m_bld_url.group(1)+'/builds'
+            repo.url = m_bld_url.group(1) + '/builds'
             repo.rev = m_bld_url.group(8)
             repo.is_build = True
         elif m_repo_url:
@@ -1013,7 +1052,8 @@ class Repo(object):
         m_bld_url = re.match(regex_build_url, ref.strip().replace('\\', '/'))
         if not (m_local or m_bld_url or m_repo_url):
             warning(
-                "File \"%s\" in \"%s\" uses a non-standard .lib file extension, which is not compatible with the mbed build tools.\n" % (os.path.basename(lib), os.path.split(lib)[0]))
+                "File \"%s\" in \"%s\" uses a non-standard .lib file extension, which is not compatible with the mbed build tools.\n" % (
+                os.path.basename(lib), os.path.split(lib)[0]))
             return False
         else:
             return cls.fromurl(ref, lib[:-4])
@@ -1048,7 +1088,7 @@ class Repo(object):
     @classmethod
     def isrepo(cls, path=None):
         for name, _ in scms.items():
-            if os.path.isdir(os.path.join(path, '.'+name)):
+            if os.path.isdir(os.path.join(path, '.' + name)):
                 return True
 
         return False
@@ -1079,7 +1119,7 @@ class Repo(object):
             if path:
                 depth += 1
                 path = os.path.split(path)[0]
-                if tpath == path:       # Reached root.
+                if tpath == path:  # Reached root.
                     break
             else:
                 break
@@ -1091,9 +1131,11 @@ class Repo(object):
             output = ('latest' if fmt & 1 else '') + (' revision in the current branch' if fmt & 2 else '')
         elif re.match(r'^([a-fA-F0-9]{6,40})$', rev) or re.match(r'^([0-9]+)$', rev):
             revtags = self.gettags(rev) if rev else []
-            output = ('rev ' if fmt & 1 else '') + (('#' + rev[:12] + ((' (tag' + ('s' if len(revtags) > 1 else '') + ': ' + ', '.join(revtags[0:2]) + ')') if len(revtags) else '')) if fmt & 2 and rev else '')
+            output = ('rev ' if fmt & 1 else '') + (('#' + rev[:12] + (
+                (' (tag' + ('s' if len(revtags) > 1 else '') + ': ' + ', '.join(revtags[0:2]) + ')') if len(
+                    revtags) else '')) if fmt & 2 and rev else '')
         else:
-            output = ('branch/tag' if fmt & 1 else '') + (' "'+rev+'"' if fmt & 2 else '')
+            output = ('branch/tag' if fmt & 1 else '') + (' "' + rev + '"' if fmt & 2 else '')
 
         return re.sub(r' \(', ', ', re.sub(r'\)', '', output)) if fmt & 4 else output
 
@@ -1111,7 +1153,7 @@ class Repo(object):
         if self.url:
             return (self.url.rstrip('/') + '/' +
                     (('' if self.is_build else '#') +
-                        self.rev if self.rev else ''))
+                     self.rev if self.rev else ''))
 
     def sync(self):
         self.url = None
@@ -1145,7 +1187,7 @@ class Repo(object):
 
     def getscm(self):
         for name, scm in scms.items():
-            if os.path.isdir(os.path.join(self.path, '.'+name)):
+            if os.path.isdir(os.path.join(self.path, '.' + name)):
                 return scm
 
     def gettags(self, rev=None):
@@ -1161,6 +1203,7 @@ class Repo(object):
             if self.scm and hasattr(self.scm, method) and callable(getattr(self.scm, method)):
                 with cd(self.path):
                     return getattr(self.scm, method)(*args, **kwargs)
+
         return __scm_call
 
     def __getattr__(self, attr):
@@ -1233,7 +1276,7 @@ class Repo(object):
 
     def getlibs(self):
         for root, dirs, files in os.walk(self.path):
-            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
             files[:] = [f for f in files if not f.startswith('.')]
 
             for f in files:
@@ -1248,17 +1291,21 @@ class Repo(object):
         if os.path.isfile(self.lib):
             with open(self.lib) as f:
                 lib_repo = Repo.fromurl(f.read().strip())
-                if (formaturl(lib_repo.url, 'https') == formaturl(self.url, 'https') # match URLs in common format (https)
-                        and (lib_repo.rev == self.rev                              # match revs, even if rev is None (valid for repos with no revisions)
-                             or (lib_repo.rev and self.rev
-                                 and lib_repo.rev == self.rev[0:len(lib_repo.rev)]))):  # match long and short rev formats
-                    #print self.name, 'unmodified'
+                if (formaturl(lib_repo.url, 'https') == formaturl(self.url,
+                                                                  'https')  # match URLs in common format (https)
+                        and (
+                                lib_repo.rev == self.rev  # match revs, even if rev is None (valid for repos with no revisions)
+                                or (lib_repo.rev and self.rev
+                                    and lib_repo.rev == self.rev[
+                                                        0:len(lib_repo.rev)]))):  # match long and short rev formats
+                    # print self.name, 'unmodified'
                     return
 
         ref = (formaturl(self.url, 'https').rstrip('/') + '/' +
-              (('' if self.is_build else '#') +
+               (('' if self.is_build else '#') +
                 self.rev if self.rev else ''))
-        action("Updating reference \"%s\" -> \"%s\"" % (relpath(cwd_root, self.path) if cwd_root != self.path else self.name, ref))
+        action("Updating reference \"%s\" -> \"%s\"" % (
+        relpath(cwd_root, self.path) if cwd_root != self.path else self.name, ref))
         with open(self.lib, 'wb') as f:
             with_auth = urlparse(ref)
             f.write(with_auth._replace(netloc=with_auth.hostname).geturl())
@@ -1273,7 +1320,8 @@ class Repo(object):
 
     def get_cache(self, url):
         up = urlparse(formaturl(url, 'https'))
-        if self.cache and up and up.netloc and os.path.isdir(os.path.join(self.cache, up.netloc, re.sub(r'^/', '', up.path))):
+        if self.cache and up and up.netloc and os.path.isdir(
+                os.path.join(self.cache, up.netloc, re.sub(r'^/', '', up.path))):
             return os.path.join(self.cache, up.netloc, re.sub(r'^/', '', up.path))
 
     def set_cache(self, url):
@@ -1285,7 +1333,7 @@ class Repo(object):
                 if not os.path.isdir(cpath):
                     os.makedirs(cpath)
 
-                scm_dir = '.'+self.scm.name
+                scm_dir = '.' + self.scm.name
                 if os.path.isdir(os.path.join(cpath, scm_dir)):
                     rmtree_readonly(os.path.join(cpath, scm_dir))
                 shutil.copytree(os.path.join(self.path, scm_dir), os.path.join(cpath, scm_dir))
@@ -1297,17 +1345,20 @@ class Repo(object):
         err = None
         if (self.is_local or self.url is None) and not clean_deps:
             err = (
-                "Preserving local library \"%s\" in \"%s\".\nPlease publish this library to a remote URL to be able to restore it at any time."
-                "You can use --ignore switch to ignore all local libraries and update only the published ones.\n"
-                "You can also use --clean-deps switch to remove all local libraries. WARNING: This action cannot be undone." % (self.name, self.path))
+                    "Preserving local library \"%s\" in \"%s\".\nPlease publish this library to a remote URL to be able to restore it at any time."
+                    "You can use --ignore switch to ignore all local libraries and update only the published ones.\n"
+                    "You can also use --clean-deps switch to remove all local libraries. WARNING: This action cannot be undone." % (
+                    self.name, self.path))
         elif not clean and self.dirty():
             err = (
-                "Uncommitted changes in \"%s\" in \"%s\".\nPlease discard or stash them first and then retry update.\n"
-                "You can also use --clean switch to discard all uncommitted changes. WARNING: This action cannot be undone." % (self.name, self.path))
+                    "Uncommitted changes in \"%s\" in \"%s\".\nPlease discard or stash them first and then retry update.\n"
+                    "You can also use --clean switch to discard all uncommitted changes. WARNING: This action cannot be undone." % (
+                    self.name, self.path))
         elif not clean_deps and self.outgoing():
             err = (
-                "Unpublished changes in \"%s\" in \"%s\".\nPlease publish them first using the \"publish\" command.\n"
-                "You can also use --clean-deps to discard all local commits and replace the library with the one included in this revision. WARNING: This action cannot be undone." % (self.name, self.path))
+                    "Unpublished changes in \"%s\" in \"%s\".\nPlease publish them first using the \"publish\" command.\n"
+                    "You can also use --clean-deps to discard all local commits and replace the library with the one included in this revision. WARNING: This action cannot be undone." % (
+                    self.name, self.path))
 
         return (False, err) if err else (True, "OK")
 
@@ -1315,14 +1366,16 @@ class Repo(object):
         err = None
         if not os.path.isdir(self.path):
             err = (
-                "Library reference \"%s\" points to non-existing library in \"%s\"\n"
-                "You can use \"mbed deploy\" to import the missing libraries.\n"
-                "You can also use \"mbed sync\" to synchronize and remove all invalid library references." % (os.path.basename(self.lib), self.path))
+                    "Library reference \"%s\" points to non-existing library in \"%s\"\n"
+                    "You can use \"mbed deploy\" to import the missing libraries.\n"
+                    "You can also use \"mbed sync\" to synchronize and remove all invalid library references." % (
+                    os.path.basename(self.lib), self.path))
         elif not self.isrepo(self.path):
             err = (
-                "Library reference \"%s\" points to a folder \"%s\", which is not a valid repository.\n"
-                "You can remove the conflicting folder manually and use \"mbed deploy\" to import the missing libraries\n"
-                "You can also remove library reference \"%s\" and use \"mbed sync\" again." % (os.path.basename(self.lib), self.path, self.lib))
+                    "Library reference \"%s\" points to a folder \"%s\", which is not a valid repository.\n"
+                    "You can remove the conflicting folder manually and use \"mbed deploy\" to import the missing libraries\n"
+                    "You can also remove library reference \"%s\" and use \"mbed sync\" again." % (
+                    os.path.basename(self.lib), self.path, self.lib))
 
         if err:
             if show_warning:
@@ -1355,7 +1408,7 @@ class Program(object):
                 break
 
             path = os.path.split(path)[0]
-            if tpath == path:       # Reached root.
+            if tpath == path:  # Reached root.
                 break
 
         self.name = os.path.basename(self.path)
@@ -1446,7 +1499,8 @@ class Program(object):
         try:
             with open(os.path.join(req_path, req_file), 'r') as f:
                 import pip
-                installed_packages = [re.sub(r'-', '_', package.project_name.lower()) for package in pip.get_installed_distributions(local_only=True)]
+                installed_packages = [re.sub(r'-', '_', package.project_name.lower()) for package in
+                                      pip.get_installed_distributions(local_only=True)]
                 for line in f.read().splitlines():
                     pkg = re.sub(r'-', '_', re.sub(r'^([\w-]+).*$', r'\1', line).lower())
                     if not pkg in installed_packages:
@@ -1465,9 +1519,10 @@ class Program(object):
 
         if missing:
             err = (
-                "-----------------------------------------------------------------\n"
-                "The mbed OS tools in this program require the following Python modules: %s\n"
-                "You can install all missing modules by running \"pip install -r %s\" in \"%s\"" % (', '.join(missing), req_file, req_path))
+                    "-----------------------------------------------------------------\n"
+                    "The mbed OS tools in this program require the following Python modules: %s\n"
+                    "You can install all missing modules by running \"pip install -r %s\" in \"%s\"" % (
+                    ', '.join(missing), req_file, req_path))
             if os.name == 'posix':
                 err += "\nOn Posix systems (Linux, Mac, etc) you might have to switch to superuser account or use \"sudo\""
 
@@ -1475,7 +1530,6 @@ class Program(object):
                 warning(err)
             else:
                 error(err, 1)
-
 
     # Routines after cloning mbed-os
     def post_action(self):
@@ -1491,7 +1545,8 @@ class Program(object):
 
         if (not os.path.isfile(os.path.join(self.path, 'mbed_settings.py')) and
                 os.path.isfile(os.path.join(mbed_tools_path, 'default_settings.py'))):
-            shutil.copy(os.path.join(mbed_tools_path, 'default_settings.py'), os.path.join(self.path, 'mbed_settings.py'))
+            shutil.copy(os.path.join(mbed_tools_path, 'default_settings.py'),
+                        os.path.join(self.path, 'mbed_settings.py'))
 
         self.check_requirements(True)
 
@@ -1524,7 +1579,9 @@ class Program(object):
     def get_tools(self):
         mbed_tools_path = self.get_tools_dir()
         if not mbed_tools_path:
-            error('The mbed tools were not found in "%s". \nRun `mbed deploy` to install dependencies and tools. ' % self.path, -1)
+            error(
+                'The mbed tools were not found in "%s". \nRun `mbed deploy` to install dependencies and tools. ' % self.path,
+                -1)
         return mbed_tools_path
 
     def get_env(self):
@@ -1532,8 +1589,8 @@ class Program(object):
         env['PYTHONPATH'] = os.path.abspath(self.path)
         compilers = ['ARM', 'GCC_ARM', 'IAR', 'ARMC6']
         for c in compilers:
-            if self.get_cfg(c+'_PATH'):
-                env['MBED_'+c+'_PATH'] = self.get_cfg(c+'_PATH')
+            if self.get_cfg(c + '_PATH'):
+                env['MBED_' + c + '_PATH'] = self.get_cfg(c + '_PATH')
 
         return env
 
@@ -1554,7 +1611,9 @@ class Program(object):
         toolchain_cfg = self.get_cfg('TOOLCHAIN')
         tchain = toolchain if toolchain else toolchain_cfg
         if tchain is None:
-            error("Please specify toolchain using the -t switch or set default toolchain using command 'mbed toolchain'", 1)
+            error(
+                "Please specify toolchain using the -t switch or set default toolchain using command 'mbed toolchain'",
+                1)
         return tchain
 
     def set_defaults(self, target=None, toolchain=None):
@@ -1570,7 +1629,6 @@ class Program(object):
                 macros = f.read().splitlines()
         return macros
 
-
     def ignore_build_dir(self):
         build_path = os.path.join(self.path, self.build_dir)
         if not os.path.exists(build_path):
@@ -1585,13 +1643,16 @@ class Program(object):
     def detect_target(self, info=None):
         targets = self.get_detected_targets()
         if targets == False:
-            error("The target detection requires that the 'mbed-ls' python module is installed.\nYou can install mbed-ls by running 'pip install mbed-ls'.", 1)
+            error(
+                "The target detection requires that the 'mbed-ls' python module is installed.\nYou can install mbed-ls by running 'pip install mbed-ls'.",
+                1)
         elif len(targets) > 1:
             error("Multiple targets were detected.\nOnly 1 target board should be connected to your system.", 1)
         elif len(targets) == 0:
             error("No targets were detected.\nPlease make sure a target board is connected to this system.", 1)
         else:
-            action("Detected \"%s\" connected to \"%s\" and using com port \"%s\"" % (targets[0]['name'], targets[0]['mount'], targets[0]['serial']))
+            action("Detected \"%s\" connected to \"%s\" and using com port \"%s\"" % (
+            targets[0]['name'], targets[0]['mount'], targets[0]['serial']))
             info = {'msd': targets[0]['mount'], 'port': targets[0]['serial'], 'name': targets[0]['name']}
 
         if info is None:
@@ -1604,7 +1665,8 @@ class Program(object):
             import mbed_lstools
             oldError = None
             if os.name == 'nt':
-                oldError = ctypes.windll.kernel32.SetErrorMode(1) # Disable Windows error box temporarily. note that SEM_FAILCRITICALERRORS = 1
+                oldError = ctypes.windll.kernel32.SetErrorMode(
+                    1)  # Disable Windows error box temporarily. note that SEM_FAILCRITICALERRORS = 1
             mbeds = mbed_lstools.create()
             detect_muts_list = mbeds.list_mbeds()
             if os.name == 'nt':
@@ -1640,6 +1702,7 @@ class Global(object):
     def list_cfg(self, *args, **kwargs):
         return Cfg(self.path).list(*args, **kwargs)
 
+
 # Cfg classed used for handling the config backend
 class Cfg(object):
     path = None
@@ -1666,7 +1729,7 @@ class Cfg(object):
                 lines.remove(line)
 
         if not val is None:
-            lines += [var+"="+val]
+            lines += [var + "=" + val]
 
         try:
             with open(fl, 'w') as f:
@@ -1720,9 +1783,11 @@ def formaturl(url, format="default"):
             if format == "ssh":
                 url = 'ssh://%s%s/%s.git' % (m.group(2) or 'git@', m.group(6), m.group(7))
             elif format == "http":
-                url = 'http://%s%s/%s' % (m.group(2) if (m.group(2) and (m.group(5) or m.group(3) != 'git')) else '', m.group(6), m.group(7))
+                url = 'http://%s%s/%s' % (
+                m.group(2) if (m.group(2) and (m.group(5) or m.group(3) != 'git')) else '', m.group(6), m.group(7))
             elif format == "https":
-                url = 'https://%s%s/%s' % (m.group(2) if (m.group(2) and (m.group(5) or m.group(3) != 'git')) else '', m.group(6), m.group(7))
+                url = 'https://%s%s/%s' % (
+                m.group(2) if (m.group(2) and (m.group(5) or m.group(3) != 'git')) else '', m.group(6), m.group(7))
         else:
             m = re.match(regex_hg_url, url)
             if m:
@@ -1737,11 +1802,12 @@ def formaturl(url, format="default"):
 
 # Subparser handling
 parser = argparse.ArgumentParser(prog='mbed',
-    description="Command-line code management tool for ARM mbed OS - http://www.mbed.com\nversion %s\n\nUse 'mbed <command> -h|--help' for detailed help.\nOnline manual and guide available at https://github.com/ARMmbed/mbed-cli" % ver,
-    formatter_class=argparse.RawTextHelpFormatter)
+                                 description="Command-line code management tool for ARM mbed OS - http://www.mbed.com\nversion %s\n\nUse 'mbed <command> -h|--help' for detailed help.\nOnline manual and guide available at https://github.com/ARMmbed/mbed-cli" % ver,
+                                 formatter_class=argparse.RawTextHelpFormatter)
 subparsers = parser.add_subparsers(title="Commands", metavar="           ")
 parser.add_argument("--version", action="store_true", dest="version", help="print version number and exit")
 subcommands = {}
+
 
 # Process handling
 def subcommand(name, *args, **kwargs):
@@ -1769,7 +1835,8 @@ def subcommand(name, *args, **kwargs):
                 subparser.add_argument(*opt, **arg)
 
         subparser.add_argument("-v", "--verbose", action="store_true", dest="verbose", help="Verbose diagnostic output")
-        subparser.add_argument("-vv", "--very_verbose", action="store_true", dest="very_verbose", help="Very verbose diagnostic output")
+        subparser.add_argument("-vv", "--very_verbose", action="store_true", dest="very_verbose",
+                               help="Very verbose diagnostic output")
 
         def thunk(parsed_args):
             argv = [arg['dest'] if 'dest' in arg else arg['name'] for arg in args]
@@ -1787,25 +1854,32 @@ def subcommand(name, *args, **kwargs):
             subparsers._name_parser_map[alias] = subparsers._name_parser_map[name]
 
         return command
+
     return __subcommand
 
 
 # New command
 @subcommand('new',
-    dict(name='name', help='Destination name or path'),
-    dict(name='--scm', nargs='?', help='Source control management. Currently supported: %s. Default: git' % ', '.join([s.name for s in scms.values()])),
-    dict(name='--program', action='store_true', help='Force creation of an mbed program. Default: auto.'),
-    dict(name='--library', action='store_true', help='Force creation of an mbed library. Default: auto.'),
-    dict(name='--mbedlib', action='store_true', help='Add the mbed library instead of mbed-os into the program.'),
-    dict(name='--create-only', action='store_true', help='Only create a program, do not import mbed-os or mbed library.'),
-    dict(name='--depth', nargs='?', help='Number of revisions to fetch the mbed OS repository when creating new program. Default: all revisions.'),
-    dict(name='--protocol', nargs='?', help='Transport protocol when fetching the mbed OS repository when creating new program. Supported: https, http, ssh, git. Default: inferred from URL.'),
-    help='Create new mbed program or library',
-    description=(
-        "Creates a new mbed program if executed within a non-program location.\n"
-        "Alternatively creates an mbed library if executed within an existing program.\n"
-        "When creating new program, the latest mbed-os release will be downloaded/added\n unless --create-only is specified.\n"
-        "Supported source control management: git, hg"))
+            dict(name='name', help='Destination name or path'),
+            dict(name='--scm', nargs='?',
+                 help='Source control management. Currently supported: %s. Default: git' % ', '.join(
+                     [s.name for s in scms.values()])),
+            dict(name='--program', action='store_true', help='Force creation of an mbed program. Default: auto.'),
+            dict(name='--library', action='store_true', help='Force creation of an mbed library. Default: auto.'),
+            dict(name='--mbedlib', action='store_true',
+                 help='Add the mbed library instead of mbed-os into the program.'),
+            dict(name='--create-only', action='store_true',
+                 help='Only create a program, do not import mbed-os or mbed library.'),
+            dict(name='--depth', nargs='?',
+                 help='Number of revisions to fetch the mbed OS repository when creating new program. Default: all revisions.'),
+            dict(name='--protocol', nargs='?',
+                 help='Transport protocol when fetching the mbed OS repository when creating new program. Supported: https, http, ssh, git. Default: inferred from URL.'),
+            help='Create new mbed program or library',
+            description=(
+                    "Creates a new mbed program if executed within a non-program location.\n"
+                    "Alternatively creates an mbed library if executed within an existing program.\n"
+                    "When creating new program, the latest mbed-os release will be downloaded/added\n unless --create-only is specified.\n"
+                    "Supported source control management: git, hg"))
 def new(name, scm='git', program=False, library=False, mbedlib=False, create_only=False, depth=None, protocol=None):
     global cwd_root
 
@@ -1833,7 +1907,9 @@ def new(name, scm='git', program=False, library=False, mbedlib=False, create_onl
         if os.path.isdir(d_path) and Repo.isrepo(d_path):
             repo = Repo.fromrepo(d_path)
             if repo.scm.name != scm:
-                error("A repository already exists in \"%s\" based on %s. Please select a different name or location." % (d_path, scm), 1)
+                error(
+                    "A repository already exists in \"%s\" based on %s. Please select a different name or location." % (
+                    d_path, scm), 1)
         else:
             repo_scm = [s for s in scms.values() if s.name == scm.lower()]
             if not repo_scm:
@@ -1857,7 +1933,7 @@ def new(name, scm='git', program=False, library=False, mbedlib=False, create_onl
         p.path = cwd_root
         p.set_root()
         if not create_only and not p.get_os_dir() and not p.get_mbedlib_dir():
-            url = mbed_lib_url if mbedlib else mbed_os_url+'#latest'
+            url = mbed_lib_url if mbedlib else mbed_os_url + '#latest'
             d = 'mbed' if mbedlib else 'mbed-os'
             try:
                 with cd(d_path):
@@ -1878,31 +1954,35 @@ def new(name, scm='git', program=False, library=False, mbedlib=False, create_onl
 
 # Import command
 @subcommand('import',
-    dict(name='url', help='URL of the program'),
-    dict(name='path', nargs='?', help='Destination name or path. Default: current directory.'),
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
-    dict(name='--depth', nargs='?', help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
-    dict(name='--protocol', nargs='?', help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
-    hidden_aliases=['im', 'imp'],
-    help='Import program from URL',
-    description=(
-        "Imports mbed program and its dependencies from a source control based URL\n"
-        "(GitHub, Bitbucket, mbed.org) into the current directory or specified\npath.\n"
-        "Use 'mbed add <URL>' to add a library into an existing program."))
+            dict(name='url', help='URL of the program'),
+            dict(name='path', nargs='?', help='Destination name or path. Default: current directory.'),
+            dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
+            dict(name='--depth', nargs='?',
+                 help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
+            dict(name='--protocol', nargs='?',
+                 help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
+            hidden_aliases=['im', 'imp'],
+            help='Import program from URL',
+            description=(
+                    "Imports mbed program and its dependencies from a source control based URL\n"
+                    "(GitHub, Bitbucket, mbed.org) into the current directory or specified\npath.\n"
+                    "Use 'mbed add <URL>' to add a library into an existing program."))
 def import_(url, path=None, ignore=False, depth=None, protocol=None, top=True):
     global cwd_root
 
     # translate 'mbed-os' to https://github.com/ARMmbed/mbed-os
     orig_url = url
     if not Repo.isurl(url) and not os.path.exists(url):
-        url = mbed_base_url+'/'+url
+        url = mbed_base_url + '/' + url
 
     repo = Repo.fromurl(url, path)
     if top:
         p = Program(path)
         if p and not p.is_cwd:
-            error("Cannot import program in the specified location \"%s\" because it's already part of a program \"%s\".\n"
-                  "Please change your working directory to a different location or use \"mbed add\" to import the URL as a library." % (os.path.abspath(repo.path), p.name), 1)
+            error(
+                "Cannot import program in the specified location \"%s\" because it's already part of a program \"%s\".\n"
+                "Please change your working directory to a different location or use \"mbed add\" to import the URL as a library." % (
+                os.path.abspath(repo.path), p.name), 1)
 
     protocol = Program().get_cfg('PROTOCOL', protocol)
 
@@ -1910,10 +1990,11 @@ def import_(url, path=None, ignore=False, depth=None, protocol=None, top=True):
         error("Directory \"%s\" is not empty. Please ensure that the destination folder is empty." % repo.path, 1)
 
     if not Repo.isurl(orig_url) and os.path.exists(orig_url):
-            warning("Importing from a local folder \"%s\", not from a URL" % orig_url)
+        warning("Importing from a local folder \"%s\", not from a URL" % orig_url)
 
     text = "Importing program" if top else "Adding library"
-    action("%s \"%s\" from \"%s\"%s" % (text, relpath(cwd_root, repo.path), formaturl(repo.url, protocol), ' at '+(repo.revtype(repo.rev))))
+    action("%s \"%s\" from \"%s\"%s" % (
+    text, relpath(cwd_root, repo.path), formaturl(repo.url, protocol), ' at ' + (repo.revtype(repo.rev))))
     if repo.clone(repo.url, repo.path, rev=repo.rev, depth=depth, protocol=protocol):
         with cd(repo.path):
             Program(repo.path).set_root()
@@ -1923,7 +2004,9 @@ def import_(url, path=None, ignore=False, depth=None, protocol=None, top=True):
             except ProcessException as e:
                 err = "Unable to update \"%s\" to %s" % (repo.name, repo.revtype(repo.rev))
                 if depth:
-                    err = err + ("\nThe --depth option might prevent fetching the whole revision tree and checking out %s." % (repo.revtype(repo.rev)))
+                    err = err + (
+                                "\nThe --depth option might prevent fetching the whole revision tree and checking out %s." % (
+                            repo.revtype(repo.rev)))
                 if ignore:
                     warning(err)
                 else:
@@ -1937,7 +2020,7 @@ def import_(url, path=None, ignore=False, depth=None, protocol=None, top=True):
 
     repo.sync()
 
-    if top: # This helps sub-commands to display relative paths to the imported program
+    if top:  # This helps sub-commands to display relative paths to the imported program
         cwd_root = repo.path
 
     with cd(repo.path):
@@ -1949,17 +2032,19 @@ def import_(url, path=None, ignore=False, depth=None, protocol=None, top=True):
 
 # Add library command
 @subcommand('add',
-    dict(name='url', help='URL of the library'),
-    dict(name='path', nargs='?', help='Destination name or path. Default: current folder.'),
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
-    dict(name='--depth', nargs='?', help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
-    dict(name='--protocol', nargs='?', help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
-    hidden_aliases=['ad'],
-    help='Add library from URL',
-    description=(
-        "Adds mbed library and its dependencies from a source control based URL\n"
-        "(GitHub, Bitbucket, mbed.org) into an existing program.\n"
-        "Use 'mbed import <URL>' to import as a program"))
+            dict(name='url', help='URL of the library'),
+            dict(name='path', nargs='?', help='Destination name or path. Default: current folder.'),
+            dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
+            dict(name='--depth', nargs='?',
+                 help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
+            dict(name='--protocol', nargs='?',
+                 help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
+            hidden_aliases=['ad'],
+            help='Add library from URL',
+            description=(
+                    "Adds mbed library and its dependencies from a source control based URL\n"
+                    "(GitHub, Bitbucket, mbed.org) into an existing program.\n"
+                    "Use 'mbed import <URL>' to import as a program"))
 def add(url, path=None, ignore=False, depth=None, protocol=None, top=True):
     repo = Repo.fromrepo()
 
@@ -1977,12 +2062,12 @@ def add(url, path=None, ignore=False, depth=None, protocol=None, top=True):
 
 # Remove library
 @subcommand('remove',
-    dict(name='path', help='Local library name or path'),
-    help='Remove library',
-    hidden_aliases=['rm', 'rem'],
-    description=(
-        "Remove specified library, its dependencies and references from the current\n"
-        "You can re-add the library from its URL via 'mbed add <library URL>'."))
+            dict(name='path', help='Local library name or path'),
+            help='Remove library',
+            hidden_aliases=['rm', 'rem'],
+            description=(
+                    "Remove specified library, its dependencies and references from the current\n"
+                    "You can re-add the library from its URL via 'mbed add <library URL>'."))
 def remove(path):
     repo = Repo.fromrepo()
     if not Repo.isrepo(path):
@@ -1997,14 +2082,16 @@ def remove(path):
 
 # Deploy command
 @subcommand('deploy',
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
-    dict(name='--depth', nargs='?', help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
-    dict(name='--protocol', nargs='?', help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
-    help='Find and add missing libraries',
-    description=(
-        "Import missing dependencies in an existing program or library.\n"
-        "Use 'mbed import <URL>' and 'mbed add <URL>' instead of cloning manually and\n"
-        "then running 'mbed deploy'"))
+            dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to cloning and updating.'),
+            dict(name='--depth', nargs='?',
+                 help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
+            dict(name='--protocol', nargs='?',
+                 help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
+            help='Find and add missing libraries',
+            description=(
+                    "Import missing dependencies in an existing program or library.\n"
+                    "Use 'mbed import <URL>' and 'mbed add <URL>' instead of cloning manually and\n"
+                    "then running 'mbed deploy'"))
 def deploy(ignore=False, depth=None, protocol=None, top=True):
     repo = Repo.fromrepo()
     repo.ignores()
@@ -2024,18 +2111,21 @@ def deploy(ignore=False, depth=None, protocol=None, top=True):
         if program.is_classic:
             program.update_tools(os.path.join(getcwd(), '.temp'))
 
+
 # Publish command
 @subcommand('publish',
-    dict(name=['-A', '--all'], dest='all_refs', action='store_true', help='Publish all branches, including new ones. Default: push only the current branch.'),
-    dict(name=['-M', '--message'], dest='msg', type=str, nargs='?', help='Commit message. Default: prompts for commit message.'),
-    hidden_aliases=['pub'],
-    help='Publish program or library',
-    description=(
-        "Publishes the current program or library and all dependencies to their\nassociated remote repository URLs.\n"
-        "This command performs various consistency checks for local uncommitted changes\n"
-        "and unpublished revisions and encourages to commit/push them.\n"
-        "Online guide about collaboration is available at:\n"
-        "www.mbed.com/collab_guide"))
+            dict(name=['-A', '--all'], dest='all_refs', action='store_true',
+                 help='Publish all branches, including new ones. Default: push only the current branch.'),
+            dict(name=['-M', '--message'], dest='msg', type=str, nargs='?',
+                 help='Commit message. Default: prompts for commit message.'),
+            hidden_aliases=['pub'],
+            help='Publish program or library',
+            description=(
+                    "Publishes the current program or library and all dependencies to their\nassociated remote repository URLs.\n"
+                    "This command performs various consistency checks for local uncommitted changes\n"
+                    "and unpublished revisions and encourages to commit/push them.\n"
+                    "Online guide about collaboration is available at:\n"
+                    "www.mbed.com/collab_guide"))
 def publish(all_refs=None, msg=None, top=True):
     if top:
         action("Checking for local modifications...")
@@ -2044,7 +2134,8 @@ def publish(all_refs=None, msg=None, top=True):
     if repo.is_local:
         error(
             "%s \"%s\" in \"%s\" is a local repository.\nPlease associate it with a remote repository URL before attempting to publish.\n"
-            "Read more about publishing local repositories here:\nhttps://github.com/ARMmbed/mbed-cli/#publishing-local-program-or-library" % ("Program" if top else "Library", repo.name, repo.path), 1)
+            "Read more about publishing local repositories here:\nhttps://github.com/ARMmbed/mbed-cli/#publishing-local-program-or-library" % (
+            "Program" if top else "Library", repo.name, repo.path), 1)
 
     for lib in repo.libs:
         if lib.check_repo():
@@ -2077,21 +2168,29 @@ def publish(all_refs=None, msg=None, top=True):
 
 # Update command
 @subcommand('update',
-    dict(name='rev', nargs='?', help='Revision, tag or branch'),
-    dict(name=['-C', '--clean'], action='store_true', help='Perform a clean update and discard all modified or untracked files. WARNING: This action cannot be undone. Use with caution.'),
-    dict(name='--clean-files', action='store_true', help='Remove any local ignored files. Requires \'--clean\'. WARNING: This will wipe all local uncommitted, untracked and ignored files. Use with extreme caution.'),
-    dict(name='--clean-deps', action='store_true', help='Remove any local libraries and also libraries containing uncommitted or unpublished changes. Requires \'--clean\'. WARNING: This action cannot be undone. Use with caution.'),
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to unpublished libraries, unpublished or uncommitted changes, and attempt to update from associated remote repository URLs.'),
-    dict(name='--depth', nargs='?', help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
-    dict(name='--protocol', nargs='?', help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
-    dict(name=['-l', '--latest-deps'], action='store_true', help='Update all dependencies to the latest revision of their current branch. WARNING: Ignores lib files'),
-    hidden_aliases=['up'],
-    help='Update to branch, tag, revision or latest',
-    description=(
-        "Updates the current program or library and its dependencies to specified\nbranch, tag or revision.\n"
-        "Alternatively fetches from associated remote repository URL and updates to the\n"
-        "latest revision in the current branch."))
-def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=False, top=True, depth=None, protocol=None, latest_deps=False):
+            dict(name='rev', nargs='?', help='Revision, tag or branch'),
+            dict(name=['-C', '--clean'], action='store_true',
+                 help='Perform a clean update and discard all modified or untracked files. WARNING: This action cannot be undone. Use with caution.'),
+            dict(name='--clean-files', action='store_true',
+                 help='Remove any local ignored files. Requires \'--clean\'. WARNING: This will wipe all local uncommitted, untracked and ignored files. Use with extreme caution.'),
+            dict(name='--clean-deps', action='store_true',
+                 help='Remove any local libraries and also libraries containing uncommitted or unpublished changes. Requires \'--clean\'. WARNING: This action cannot be undone. Use with caution.'),
+            dict(name=['-I', '--ignore'], action='store_true',
+                 help='Ignore errors related to unpublished libraries, unpublished or uncommitted changes, and attempt to update from associated remote repository URLs.'),
+            dict(name='--depth', nargs='?',
+                 help='Number of revisions to fetch from the remote repository. Default: all revisions.'),
+            dict(name='--protocol', nargs='?',
+                 help='Transport protocol for the source control management. Supported: https, http, ssh, git. Default: inferred from URL.'),
+            dict(name=['-l', '--latest-deps'], action='store_true',
+                 help='Update all dependencies to the latest revision of their current branch. WARNING: Ignores lib files'),
+            hidden_aliases=['up'],
+            help='Update to branch, tag, revision or latest',
+            description=(
+                    "Updates the current program or library and its dependencies to specified\nbranch, tag or revision.\n"
+                    "Alternatively fetches from associated remote repository URL and updates to the\n"
+                    "latest revision in the current branch."))
+def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=False, top=True, depth=None,
+           protocol=None, latest_deps=False):
     if top and clean:
         sync()
 
@@ -2105,12 +2204,14 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
     if top and not rev and repo.isdetached():
         error(
             "This %s is in detached HEAD state, and you won't be able to receive updates from the remote repository until you either checkout a branch or create a new one.\n"
-            "You can checkout a branch using \"%s checkout <branch_name>\" command before running \"mbed update\"." % (cwd_type, repo.scm.name), 1)
+            "You can checkout a branch using \"%s checkout <branch_name>\" command before running \"mbed update\"." % (
+            cwd_type, repo.scm.name), 1)
 
     if repo.isdetached() and latest_deps:
         warning(
             "The repo %s is in detached HEAD state, and you won't be able to receive updates from the remote repository until you either checkout a branch or create a new one.\n"
-            "You can checkout a branch using \"%s checkout <branch_name>\" command before running \"mbed update\"." % (repo.name, repo.scm.name))
+            "You can checkout a branch using \"%s checkout <branch_name>\" command before running \"mbed update\"." % (
+            repo.name, repo.scm.name))
 
     if repo.is_local and not repo.rev:
         action("Skipping unpublished empty %s \"%s\"" % (
@@ -2128,7 +2229,9 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
         except ProcessException as e:
             err = "Unable to update \"%s\" to %s" % (repo.name, repo.revtype(rev))
             if depth:
-                err = err + ("\nThe --depth option might prevent fetching the whole revision tree and checking out %s." % (repo.revtype(repo.rev)))
+                err = err + (
+                            "\nThe --depth option might prevent fetching the whole revision tree and checking out %s." % (
+                        repo.revtype(repo.rev)))
             if ignore:
                 warning(err)
             else:
@@ -2141,7 +2244,8 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
 
     # Compare library references (.lib) before and after update, and remove libraries that do not have references in the current revision
     for lib in repo_orig.libs:
-        if not os.path.isfile(lib.lib) and os.path.isdir(lib.path): # Library reference doesn't exist in the new revision. Will try to remove library to reproduce original structure
+        if not os.path.isfile(lib.lib) and os.path.isdir(
+                lib.path):  # Library reference doesn't exist in the new revision. Will try to remove library to reproduce original structure
             with cd(lib.path):
                 lib_repo = Repo.fromrepo(lib.path)
                 gc, msg = lib_repo.can_update(clean, clean_deps)
@@ -2163,11 +2267,12 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
         if os.path.isdir(lib.path) and Repo.isrepo(lib.path):
             lib_repo = Repo.fromrepo(lib.path)
             if (not lib.is_local and not lib_repo.is_local and
-                formaturl(lib.url, 'https') != formaturl(lib_repo.url, 'https')): # Repository URL has changed
+                    formaturl(lib.url, 'https') != formaturl(lib_repo.url, 'https')):  # Repository URL has changed
                 with cd(lib.path):
                     gc, msg = lib_repo.can_update(clean, clean_deps)
                 if gc:
-                    action("Removing library \"%s\" (changed URL). Will add from new URL." % (relpath(cwd_root, lib.path)))
+                    action(
+                        "Removing library \"%s\" (changed URL). Will add from new URL." % (relpath(cwd_root, lib.path)))
                     rmtree_readonly(lib.path)
                     repo.unignore(relpath(repo.path, lib.path))
                 else:
@@ -2183,7 +2288,8 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
             repo.ignore(relpath(repo.path, lib.path))
         else:
             with cd(lib.path):
-                update(None if latest_deps else lib.rev, clean=clean, clean_files=clean_files, clean_deps=clean_deps, ignore=ignore, top=False, latest_deps=latest_deps)
+                update(None if latest_deps else lib.rev, clean=clean, clean_files=clean_files, clean_deps=clean_deps,
+                       ignore=ignore, top=False, latest_deps=latest_deps)
 
     if top:
         program = Program(repo.path)
@@ -2195,11 +2301,11 @@ def update(rev=None, clean=False, clean_files=False, clean_deps=False, ignore=Fa
 
 # Synch command
 @subcommand('sync',
-    help='Synchronize library references\n\n',
-    description=(
-        "Synchronizes all library and dependency references (.lib files) in the\n"
-        "current program or library.\n"
-        "Note that this will remove all invalid library references."))
+            help='Synchronize library references\n\n',
+            description=(
+                    "Synchronizes all library and dependency references (.lib files) in the\n"
+                    "current program or library.\n"
+                    "Note that this will remove all invalid library references."))
 def sync(recursive=True, keep_refs=False, top=True):
     if top and recursive:
         action("Synchronizing dependency references...")
@@ -2221,7 +2327,7 @@ def sync(recursive=True, keep_refs=False, top=True):
                 repo.unignore(relpath(repo.path, lib.path))
 
     for root, dirs, files in os.walk(repo.path):
-        dirs[:] = [d for d in dirs  if not d.startswith('.')]
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
         files[:] = [f for f in files if not f.startswith('.')]
 
         for d in list(dirs):
@@ -2256,19 +2362,21 @@ def sync(recursive=True, keep_refs=False, top=True):
 
 # List command
 @subcommand('ls',
-    dict(name=['-a', '--all'], dest='detailed', action='store_true', help='List repository URL and revision pairs'),
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to missing libraries.'),
-    help='View dependency tree',
-    description=(
-        "View the dependency tree of the current program or library."))
+            dict(name=['-a', '--all'], dest='detailed', action='store_true',
+                 help='List repository URL and revision pairs'),
+            dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to missing libraries.'),
+            help='View dependency tree',
+            description=(
+                    "View the dependency tree of the current program or library."))
 def list_(detailed=False, prefix='', p_path=None, ignore=False):
     repo = Repo.fromrepo()
 
-    print "%s (%s)" % (prefix + (relpath(p_path, repo.path) if p_path else repo.name), ((repo.url + ('#' + str(repo.rev)[:12] if repo.rev else '') if detailed else repo.revtype(repo.rev, fmt=6)) or 'no revision'))
+    print "%s (%s)" % (prefix + (relpath(p_path, repo.path) if p_path else repo.name), ((repo.url + (
+        '#' + str(repo.rev)[:12] if repo.rev else '') if detailed else repo.revtype(repo.rev, fmt=6)) or 'no revision'))
 
     for i, lib in enumerate(sorted(repo.libs, key=lambda l: l.path)):
         nprefix = (prefix[:-3] + ('|  ' if prefix[-3] == '|' else '   ')) if prefix else ''
-        nprefix += '|- ' if i < len(repo.libs)-1 else '`- '
+        nprefix += '|- ' if i < len(repo.libs) - 1 else '`- '
 
         if lib.check_repo(ignore):
             with cd(lib.path):
@@ -2277,27 +2385,31 @@ def list_(detailed=False, prefix='', p_path=None, ignore=False):
 
 # Command release for cross-SCM release tags of repositories
 @subcommand('releases',
-    dict(name=['-a', '--all'], dest='detailed', action='store_true', help='Show revision hashes'),
-    dict(name=['-u', '--unstable'], dest='unstable', action='store_true', help='Show unstable releases well, e.g. release candidates, alphas, betas, etc'),
-    dict(name=['-r', '--recursive'], action='store_true', help='Show release tags for all libraries and sub-libraries as well'),
-    hidden_aliases=['rel', 'rels'],
-    help='Show release tags',
-    description=(
-        "Show release tags for the current program or library."))
+            dict(name=['-a', '--all'], dest='detailed', action='store_true', help='Show revision hashes'),
+            dict(name=['-u', '--unstable'], dest='unstable', action='store_true',
+                 help='Show unstable releases well, e.g. release candidates, alphas, betas, etc'),
+            dict(name=['-r', '--recursive'], action='store_true',
+                 help='Show release tags for all libraries and sub-libraries as well'),
+            hidden_aliases=['rel', 'rels'],
+            help='Show release tags',
+            description=(
+                    "Show release tags for the current program or library."))
 def releases_(detailed=False, unstable=False, recursive=False, prefix='', p_path=None):
     repo = Repo.fromrepo()
     tags = repo.gettags()
-    revtags = repo.gettags(repo.rev) if repo.rev and len(tags) else [] # associated tags with current commit
+    revtags = repo.gettags(repo.rev) if repo.rev and len(tags) else []  # associated tags with current commit
     regex_rels = regex_rels_all if unstable else regex_rels_official
 
     # Generate list of tags
     rels = []
     for tag in tags:
         if re.match(regex_rels, tag[1]):
-            rels.append(tag[1] + " %s%s" % ('#' + tag[0] if detailed else "", " <- current" if tag[1] in revtags else ""))
+            rels.append(
+                tag[1] + " %s%s" % ('#' + tag[0] if detailed else "", " <- current" if tag[1] in revtags else ""))
 
     # Print header
-    print "%s (%s)" % (prefix + (relpath(p_path, repo.path) if p_path else repo.name), ((repo.url + ('#' + str(repo.rev)[:12] if repo.rev else '') if detailed else repo.revtype(repo.rev, fmt=6)) or 'no revision'))
+    print "%s (%s)" % (prefix + (relpath(p_path, repo.path) if p_path else repo.name), ((repo.url + (
+        '#' + str(repo.rev)[:12] if repo.rev else '') if detailed else repo.revtype(repo.rev, fmt=6)) or 'no revision'))
 
     # Print list of tags
     rprefix = (prefix[:-3] + ('|  ' if prefix[-3] == '|' else '   ')) if recursive and prefix else ''
@@ -2311,7 +2423,7 @@ def releases_(detailed=False, unstable=False, recursive=False, prefix='', p_path
     if recursive:
         for i, lib in enumerate(sorted(repo.libs, key=lambda l: l.path)):
             nprefix = (prefix[:-3] + ('|  ' if prefix[-3] == '|' else '   ')) if prefix else ''
-            nprefix += '|- ' if i < len(repo.libs)-1 else '`- '
+            nprefix += '|- ' if i < len(repo.libs) - 1 else '`- '
 
             if lib.check_repo():
                 with cd(lib.path):
@@ -2320,16 +2432,16 @@ def releases_(detailed=False, unstable=False, recursive=False, prefix='', p_path
 
 # Command status for cross-SCM status of repositories
 @subcommand('status',
-    dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to missing libraries.'),
-    hidden_aliases=['st', 'stat'],
-    help='Show version control status\n\n',
-    description=(
-        "Show uncommitted changes a program or library and its dependencies."))
+            dict(name=['-I', '--ignore'], action='store_true', help='Ignore errors related to missing libraries.'),
+            hidden_aliases=['st', 'stat'],
+            help='Show version control status\n\n',
+            description=(
+                    "Show uncommitted changes a program or library and its dependencies."))
 def status_(ignore=False):
     repo = Repo.fromrepo()
     if repo.dirty():
         action("Status for \"%s\":" % repo.name)
-        log(repo.status()+"\n")
+        log(repo.status() + "\n")
 
     for lib in repo.libs:
         if lib.check_repo(ignore):
@@ -2339,22 +2451,30 @@ def status_(ignore=False):
 
 # Compile command which invokes the mbed OS native build system
 @subcommand('compile',
-    dict(name=['-t', '--toolchain'], help='Compile toolchain. Example: ARM, GCC_ARM, IAR'),
-    dict(name=['-m', '--target'], help='Compile target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
-    dict(name=['--profile'], action='append', help='Path of a build profile configuration file. Example: mbed-os/tools/profiles/debug.json'),
-    dict(name='--library', dest='compile_library', action='store_true', help='Compile the current program or library as a static library.'),
-    dict(name='--config', dest='compile_config', action='store_true', help='Show run-time compile configuration'),
-    dict(name='--prefix', dest='config_prefix', action='append', help='Restrict listing to parameters that have this prefix'),
-    dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
-    dict(name='--build', help='Build directory. Default: build/'),
-    dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
-    dict(name=['-f', '--flash'], action='store_true', help='Flash the built firmware onto a connected target.'),
-    dict(name=['-N', '--artifact-name'], help='Name of the built program or library'),
-    dict(name=['-S', '--supported'], dest='supported', const=True, choices=["matrix", "toolchains", "targets"], nargs="?", help='Shows supported matrix of targets and toolchains'),
-    dict(name='--app-config', dest="app_config", help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
-    help='Compile code using the mbed build tools',
-    description="Compile this program using the mbed build tools.")
-def compile_(toolchain=None, target=None, profile=False, compile_library=False, compile_config=False, config_prefix=None, source=False, build=False, clean=False, flash=False, artifact_name=None, supported=False, app_config=None):
+            dict(name=['-t', '--toolchain'], help='Compile toolchain. Example: ARM, GCC_ARM, IAR'),
+            dict(name=['-m', '--target'], help='Compile target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
+            dict(name=['--profile'], action='append',
+                 help='Path of a build profile configuration file. Example: mbed-os/tools/profiles/debug.json'),
+            dict(name='--library', dest='compile_library', action='store_true',
+                 help='Compile the current program or library as a static library.'),
+            dict(name='--config', dest='compile_config', action='store_true',
+                 help='Show run-time compile configuration'),
+            dict(name='--prefix', dest='config_prefix', action='append',
+                 help='Restrict listing to parameters that have this prefix'),
+            dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
+            dict(name='--build', help='Build directory. Default: build/'),
+            dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
+            dict(name=['-f', '--flash'], action='store_true', help='Flash the built firmware onto a connected target.'),
+            dict(name=['-N', '--artifact-name'], help='Name of the built program or library'),
+            dict(name=['-S', '--supported'], dest='supported', const=True, choices=["matrix", "toolchains", "targets"],
+                 nargs="?", help='Shows supported matrix of targets and toolchains'),
+            dict(name='--app-config', dest="app_config",
+                 help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
+            help='Compile code using the mbed build tools',
+            description="Compile this program using the mbed build tools.")
+def compile_(toolchain=None, target=None, profile=False, compile_library=False, compile_config=False,
+             config_prefix=None, source=False, build=False, clean=False, flash=False, artifact_name=None,
+             supported=False, app_config=None):
     # Gather remaining arguments
     args = remainder
     # Find the root of the program
@@ -2403,7 +2523,8 @@ def compile_(toolchain=None, target=None, profile=False, compile_library=False, 
         if compile_library:
             # Compile as a library (current dir is default)
             if not build_path:
-                build_path = os.path.join(os.path.relpath(program.path, orig_path), program.build_dir, 'libraries', os.path.basename(orig_path), target, tchain)
+                build_path = os.path.join(os.path.relpath(program.path, orig_path), program.build_dir, 'libraries',
+                                          os.path.basename(orig_path), target, tchain)
 
             popen([python_cmd, '-u', os.path.join(tools_dir, 'build.py')]
                   + list(chain.from_iterable(izip(repeat('-D'), macros)))
@@ -2437,7 +2558,7 @@ def compile_(toolchain=None, target=None, profile=False, compile_library=False, 
             if flash:
                 fw_name = artifact_name if artifact_name else program.name
                 fw_fbase = os.path.join(build_path, fw_name)
-                fw_file = fw_fbase + ('.hex' if os.path.exists(fw_fbase+'.hex') else '.bin')
+                fw_file = fw_fbase + ('.hex' if os.path.exists(fw_fbase + '.hex') else '.bin')
                 if not os.path.exists(fw_file):
                     error("Build program file (firmware) not found \"%s\"" % fw_file, 1)
                 detected = program.detect_target()
@@ -2445,36 +2566,48 @@ def compile_(toolchain=None, target=None, profile=False, compile_library=False, 
                 try:
                     from mbed_host_tests.host_tests_toolbox import flash_dev, reset_dev
                 except (IOError, ImportError, OSError):
-                    error("The '-f/--flash' option requires that the 'mbed-greentea' python module is installed.\nYou can install mbed-ls by running 'pip install mbed-greentea'.", 1)
+                    error(
+                        "The '-f/--flash' option requires that the 'mbed-greentea' python module is installed.\nYou can install mbed-ls by running 'pip install mbed-greentea'.",
+                        1)
 
                 if not flash_dev(detected['msd'], fw_file, program_cycle_s=2):
                     error("Unable to flash the target board connected to your system.", 1)
 
                 if not reset_dev(detected['port']):
-                    error("Unable to reset the target board connected to your system.\nThis might be caused by an old interface firmware.\nPlease check the board page for new firmware.", 1)
+                    error(
+                        "Unable to reset the target board connected to your system.\nThis might be caused by an old interface firmware.\nPlease check the board page for new firmware.",
+                        1)
 
     program.set_defaults(target=target, toolchain=tchain)
 
 
 # Test command
 @subcommand('test',
-    dict(name=['-t', '--toolchain'], help='Compile toolchain. Example: ARM, GCC_ARM, IAR'),
-    dict(name=['-m', '--target'], help='Compile target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
-    dict(name='--compile-list', dest='compile_list', action='store_true', help='List all tests that can be built'),
-    dict(name='--run-list', dest='run_list', action='store_true', help='List all built tests that can be ran'),
-    dict(name='--compile', dest='compile_only', action='store_true', help='Only compile tests'),
-    dict(name='--run', dest='run_only', action='store_true', help='Only run tests'),
-    dict(name=['-n', '--tests-by-name'], dest='tests_by_name', help='Limit the tests to a list (ex. test1,test2,test3)'),
-    dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
-    dict(name='--build', help='Build directory. Default: build/'),
-    dict(name=['--profile'], action='append', help='Path of a build profile configuration file. Example: mbed-os/tools/profiles/debug.json'),
-    dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
-    dict(name='--test-spec', dest="test_spec", help="Path used for the test spec file used when building and running tests (the default path is the build directory)"),
-    dict(name='--app-config', dest="app_config", help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
-    dict(name='--test-config', dest="test_config", help="Path or mbed OS keyword of a test configuration file. Example: ethernet, odin_wifi, or path/to/config.json"),
-    help='Find, build and run tests',
-    description="Find, build, and run tests in a program and libraries")
-def test_(toolchain=None, target=None, compile_list=False, run_list=False, compile_only=False, run_only=False, tests_by_name=None, source=False, profile=False, build=False, clean=False, test_spec=None, app_config=None, test_config=None):
+            dict(name=['-t', '--toolchain'], help='Compile toolchain. Example: ARM, GCC_ARM, IAR'),
+            dict(name=['-m', '--target'], help='Compile target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
+            dict(name='--compile-list', dest='compile_list', action='store_true',
+                 help='List all tests that can be built'),
+            dict(name='--run-list', dest='run_list', action='store_true', help='List all built tests that can be ran'),
+            dict(name='--compile', dest='compile_only', action='store_true', help='Only compile tests'),
+            dict(name='--run', dest='run_only', action='store_true', help='Only run tests'),
+            dict(name=['-n', '--tests-by-name'], dest='tests_by_name',
+                 help='Limit the tests to a list (ex. test1,test2,test3)'),
+            dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
+            dict(name='--build', help='Build directory. Default: build/'),
+            dict(name=['--profile'], action='append',
+                 help='Path of a build profile configuration file. Example: mbed-os/tools/profiles/debug.json'),
+            dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
+            dict(name='--test-spec', dest="test_spec",
+                 help="Path used for the test spec file used when building and running tests (the default path is the build directory)"),
+            dict(name='--app-config', dest="app_config",
+                 help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
+            dict(name='--test-config', dest="test_config",
+                 help="Path or mbed OS keyword of a test configuration file. Example: ethernet, odin_wifi, or path/to/config.json"),
+            help='Find, build and run tests',
+            description="Find, build, and run tests in a program and libraries")
+def test_(toolchain=None, target=None, compile_list=False, run_list=False, compile_only=False, run_only=False,
+          tests_by_name=None, source=False, profile=False, build=False, clean=False, test_spec=None, app_config=None,
+          test_config=None):
     # Gather remaining arguments
     args = remainder
     # Find the root of the program
@@ -2560,15 +2693,18 @@ def test_(toolchain=None, target=None, compile_list=False, run_list=False, compi
 
 # Export command
 @subcommand('export',
-    dict(name=['-i', '--ide'], help='IDE to create project files for. Example: UVISION4, UVISION5, GCC_ARM, IAR, COIDE'),
-    dict(name=['-m', '--target'], help='Export for target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
-    dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
-    dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
-    dict(name=['-S', '--supported'], dest='supported', const=True, choices=['matrix', 'ides'], nargs='?', help='Shows supported matrix of targets and toolchains'),
-    dict(name='--app-config', dest="app_config", help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
-    help='Generate an IDE project',
-    description=(
-        "Generate IDE project files for the current program."))
+            dict(name=['-i', '--ide'],
+                 help='IDE to create project files for. Example: UVISION4, UVISION5, GCC_ARM, IAR, COIDE'),
+            dict(name=['-m', '--target'], help='Export for target MCU. Example: K64F, NUCLEO_F401RE, NRF51822...'),
+            dict(name='--source', action='append', help='Source directory. Default: . (current dir)'),
+            dict(name=['-c', '--clean'], action='store_true', help='Clean the build directory before compiling'),
+            dict(name=['-S', '--supported'], dest='supported', const=True, choices=['matrix', 'ides'], nargs='?',
+                 help='Shows supported matrix of targets and toolchains'),
+            dict(name='--app-config', dest="app_config",
+                 help="Path of an app configuration file (Default is to look for 'mbed_app.json')"),
+            help='Generate an IDE project',
+            description=(
+                    "Generate IDE project files for the current program."))
 def export(ide=None, target=None, source=False, clean=False, supported=False, app_config=None):
     # Gather remaining arguments
     args = remainder
@@ -2616,11 +2752,11 @@ def export(ide=None, target=None, source=False, clean=False, supported=False, ap
 
 # Test command
 @subcommand('detect',
-    hidden_aliases=['det'],
-    help='Detect connected mbed targets/boards\n\n',
-    description=(
-        "Detects mbed targets/boards connected to this system and shows supported\n"
-        "toolchain matrix."))
+            hidden_aliases=['det'],
+            help='Detect connected mbed targets/boards\n\n',
+            description=(
+                    "Detects mbed targets/boards connected to this system and shows supported\n"
+                    "toolchain matrix."))
 def detect():
     # Gather remaining arguments
     args = remainder
@@ -2644,16 +2780,19 @@ def detect():
             if very_verbose:
                 error(str(e))
     else:
-        warning("The mbed tools were not found in \"%s\". \nLimited information will be shown about connected mbed targets/boards" % program.path)
+        warning(
+            "The mbed tools were not found in \"%s\". \nLimited information will be shown about connected mbed targets/boards" % program.path)
         targets = program.get_detected_targets()
         if targets:
             unknown_found = False
             for target in targets:
                 if target['name'] is None:
                     unknown_found = True
-                    action("Detected unknown target connected to \"%s\" and using com port \"%s\"" % (target['mount'], target['serial']))
+                    action("Detected unknown target connected to \"%s\" and using com port \"%s\"" % (
+                    target['mount'], target['serial']))
                 else:
-                    action("Detected \"%s\" connected to \"%s\" and using com port \"%s\"" % (target['name'], target['mount'], target['serial']))
+                    action("Detected \"%s\" connected to \"%s\" and using com port \"%s\"" % (
+                    target['name'], target['mount'], target['serial']))
 
             if unknown_found:
                 warning("If you're developing a new target, you can mock the device to continue your development. "
@@ -2662,18 +2801,21 @@ def detect():
 
 # Generic config command
 @subcommand('config',
-    dict(name='var', nargs='?', help='Variable name. E.g. "target", "toolchain", "protocol"'),
-    dict(name='value', nargs='?', help='Value. Will show the currently set default value for a variable if not specified.'),
-    dict(name=['-G', '--global'], dest='global_cfg', action='store_true', help='Use global settings, not local'),
-    dict(name=['-U', '--unset'], dest='unset', action='store_true', help='Unset the specified variable.'),
-    dict(name=['-L', '--list'], dest='list_config', action='store_true', help='List mbed tool configuration. Not to be confused with compile configuration, e.g. "mbed compile --config".'),
-    hidden_aliases=['cfg', 'conf'],
-    help='Tool configuration',
-    description=(
-        "Gets, sets or unsets mbed tool configuration options.\n"
-        "Options can be global (via the --global switch) or local (per program)\n"
-        "Global options are always overridden by local/program options.\n"
-        "Currently supported options: target, toolchain, protocol, depth, cache"))
+            dict(name='var', nargs='?', help='Variable name. E.g. "target", "toolchain", "protocol"'),
+            dict(name='value', nargs='?',
+                 help='Value. Will show the currently set default value for a variable if not specified.'),
+            dict(name=['-G', '--global'], dest='global_cfg', action='store_true',
+                 help='Use global settings, not local'),
+            dict(name=['-U', '--unset'], dest='unset', action='store_true', help='Unset the specified variable.'),
+            dict(name=['-L', '--list'], dest='list_config', action='store_true',
+                 help='List mbed tool configuration. Not to be confused with compile configuration, e.g. "mbed compile --config".'),
+            hidden_aliases=['cfg', 'conf'],
+            help='Tool configuration',
+            description=(
+                    "Gets, sets or unsets mbed tool configuration options.\n"
+                    "Options can be global (via the --global switch) or local (per program)\n"
+                    "Global options are always overridden by local/program options.\n"
+                    "Currently supported options: target, toolchain, protocol, depth, cache"))
 def config_(var=None, value=None, global_cfg=False, unset=False, list_config=False):
     name = var
     var = str(var).upper()
@@ -2737,33 +2879,39 @@ def config_(var=None, value=None, global_cfg=False, unset=False, list_config=Fal
 
 # Build system and exporters
 @subcommand('target',
-    dict(name='name', nargs='?', help='Default target name. Example: K64F, NUCLEO_F401RE, NRF51822...'),
-    dict(name=['-G', '--global'], dest='global_cfg', action='store_true', help='Use global settings, not local'),
-    dict(name=['-S', '--supported'], dest='supported', action='store_true', help='Shows supported matrix of targets and toolchains'),
-    help='Set or get default target',
-    description=(
-        "Set or get default toolchain\n"
-        "This is an alias to 'mbed config [--global] target [name]'\n"))
+            dict(name='name', nargs='?', help='Default target name. Example: K64F, NUCLEO_F401RE, NRF51822...'),
+            dict(name=['-G', '--global'], dest='global_cfg', action='store_true',
+                 help='Use global settings, not local'),
+            dict(name=['-S', '--supported'], dest='supported', action='store_true',
+                 help='Shows supported matrix of targets and toolchains'),
+            help='Set or get default target',
+            description=(
+                    "Set or get default toolchain\n"
+                    "This is an alias to 'mbed config [--global] target [name]'\n"))
 def target_(name=None, global_cfg=False, supported=False):
     if supported:
         return compile_(supported=supported)
     return config_('target', name, global_cfg=global_cfg)
 
+
 @subcommand('toolchain',
-    dict(name='name', nargs='?', help='Default toolchain name. Example: ARM, GCC_ARM, IAR'),
-    dict(name=['-G', '--global'], dest='global_cfg', action='store_true', help='Use global settings, not local'),
-    dict(name=['-S', '--supported'], dest='supported', action='store_true', help='Shows supported matrix of targets and toolchains'),
-    help='Set or get default toolchain\n\n',
-    description=(
-        "Set or get default toolchain\n"
-        "This is an alias to 'mbed config [--global] toolchain [name]'\n"))
+            dict(name='name', nargs='?', help='Default toolchain name. Example: ARM, GCC_ARM, IAR'),
+            dict(name=['-G', '--global'], dest='global_cfg', action='store_true',
+                 help='Use global settings, not local'),
+            dict(name=['-S', '--supported'], dest='supported', action='store_true',
+                 help='Shows supported matrix of targets and toolchains'),
+            help='Set or get default toolchain\n\n',
+            description=(
+                    "Set or get default toolchain\n"
+                    "This is an alias to 'mbed config [--global] toolchain [name]'\n"))
 def toolchain_(name=None, global_cfg=False, supported=False):
     if supported:
         return compile_(supported=supported)
     return config_('toolchain', name, global_cfg=global_cfg)
 
+
 @subcommand('help',
-    help='This help screen')
+            help='This help screen')
 def help_():
     return parser.print_help()
 
@@ -2785,7 +2933,7 @@ def main():
         sys.exit(1)
 
     if '--version' in sys.argv:
-        log(ver+"\n")
+        log(ver + "\n")
         sys.exit(0)
 
     pargs, remainder = parser.parse_known_args()

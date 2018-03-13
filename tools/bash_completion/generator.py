@@ -11,9 +11,9 @@ import subprocess
 commandRegex = r"^\s+(?P<command>\w+)\s+(?P<helptxt>[a-zA-Z ]*)$"
 
 # Why the hell do spaces get regexed in command1 ?
-subcommandRegex = r"^\s+(?P<command1>-+[a-zA-Z_\-]+(?P<modifier1>\s+[A-Z_\-]+)?)"\
-    r"(?P<command2>,\s+-+[a-zA-Z_-]+(?P<modifier2>\s+[A-Z_-]+)?)?"\
-    r"\s+(?P<helptxt>.*)$"
+subcommandRegex = r"^\s+(?P<command1>-+[a-zA-Z_\-]+(?P<modifier1>\s+[A-Z_\-]+)?)" \
+                  r"(?P<command2>,\s+-+[a-zA-Z_-]+(?P<modifier2>\s+[A-Z_-]+)?)?" \
+                  r"\s+(?P<helptxt>.*)$"
 
 
 def getHelpTxt(command=None):
@@ -24,30 +24,36 @@ def getHelpTxt(command=None):
     out, err = p.communicate()
     return out
 
+
 def getTargetCode():
     with open("templates/target.tmplt") as fp:
         txt = fp.read()
     return txt
+
 
 def getToolchainCode():
     with open("templates/toolchain.tmplt") as fp:
         txt = fp.read()
     return txt
 
+
 def getSCMCode():
     with open("templates/scm.tmplt") as fp:
         txt = fp.read()
     return txt
+
 
 def getIDECode():
     with open("templates/ide.tmplt") as fp:
         txt = fp.read()
     return txt
 
+
 def getProtocolCode():
     with open("templates/protocol.tmplt") as fp:
         txt = fp.read()
     return txt
+
 
 def parseCommands():
     commands = defaultdict(defaultdict)
@@ -128,25 +134,29 @@ def parseCommands():
 
                 # Adding the dependent command handlers
                 if "target" in command1 or "target" in command2:
-                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": "|".join(filter(None, [command1, command2])), "code": getTargetCode()})
+                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append(
+                        {"case": "|".join(filter(None, [command1, command2])), "code": getTargetCode()})
 
                 if "toolchain" in command1 or "toolchain" in command2:
-                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": "|".join(filter(None, [command1, command2])), "code": getToolchainCode()})
-                
+                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append(
+                        {"case": "|".join(filter(None, [command1, command2])), "code": getToolchainCode()})
 
                 if "--ide" in command1 or "--ide" in command2:
-                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": "|".join(filter(None, [command1, command2])), "code": getIDECode()})
+                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append(
+                        {"case": "|".join(filter(None, [command1, command2])), "code": getIDECode()})
 
                 if "scm" in command1 or "scm" in command2:
-                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": "|".join(filter(None, [command1, command2])), "code": getSCMCode()})
-                
+                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append(
+                        {"case": "|".join(filter(None, [command1, command2])), "code": getSCMCode()})
+
                 if "protocol" in command1 or "protocol" in command2:
-                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": "|".join(filter(None, [command1, command2])), "code": getProtocolCode()})
-                
+                    commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append(
+                        {"case": "|".join(filter(None, [command1, command2])), "code": getProtocolCode()})
+
         # Adding the dependent command handlers for target and toolchain
         if "target" in commandKey:
             commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": commandKey, "code": getTargetCode()})
-                
+
         if "toolchain" in commandKey:
             commands[commandKey]["HAVE_PREV"]["PREV_CASE"].append({"case": commandKey, "code": getToolchainCode()})
 

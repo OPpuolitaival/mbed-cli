@@ -12,6 +12,7 @@
 
 from util import *
 
+
 # Tests 'mbed ls' and provides sanity check of test framework
 def test_ls(mbed, _):
     assertls(mbed, 'test1', [

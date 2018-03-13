@@ -12,6 +12,7 @@
 
 from util import *
 
+
 # Tests if a 'mbed sync', commit, and 'mbed update' works on a simple file change
 def test_sync_update(mbed, testrepos):
     test1 = testrepos[0]
@@ -32,6 +33,7 @@ def test_sync_update(mbed, testrepos):
         popen(['python', mbed, 'update'])
 
     assert os.path.isfile('testimport/test2/hello')
+
 
 # Tests if removing a library is carried over sync/update
 def test_sync_update_remove(mbed, testrepos):
@@ -54,6 +56,7 @@ def test_sync_update_remove(mbed, testrepos):
         "testimport",
         "`- test2",
     ])
+
 
 # Tests if adding a library is carried over sync/update
 def test_sync_update_add(mbed, testrepos):
@@ -81,6 +84,7 @@ def test_sync_update_add(mbed, testrepos):
         "      `- test4",
     ])
 
+
 # Tests if moving a library is carried over sync/update
 def test_sync_update_move(mbed, testrepos):
     test1 = testrepos[0]
@@ -104,4 +108,3 @@ def test_sync_update_move(mbed, testrepos):
         "   `- testmove",
         "      `- test4",
     ])
-

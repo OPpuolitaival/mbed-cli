@@ -12,6 +12,7 @@
 
 from util import *
 
+
 # Tests 'mbed import'
 def test_import(mbed, testrepos):
     test1 = testrepos[0]

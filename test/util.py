@@ -20,9 +20,11 @@ import stat
 
 MBED_PATH = os.path.abspath(os.path.join('mbed', 'mbed.py'))
 
+
 # Process execution
 class ProcessException(Exception):
     pass
+
 
 def popen(command, stdin=None, **kwargs):
     print ' '.join(command)
@@ -30,6 +32,7 @@ def popen(command, stdin=None, **kwargs):
 
     if proc.wait() != 0:
         raise ProcessException(proc.returncode)
+
 
 def pquery(command, stdin=None, **kwargs):
     print ' '.join(command)
@@ -41,6 +44,7 @@ def pquery(command, stdin=None, **kwargs):
 
     return stdout
 
+
 # Directory navigation
 @contextlib.contextmanager
 def cd(newdir):
@@ -51,13 +55,15 @@ def cd(newdir):
     finally:
         os.chdir(prevdir)
 
+
 # Handling test environment
 @pytest.fixture
 def mbed(tmpdir):
     tmpdir.chdir()
 
     return MBED_PATH
-    
+
+
 # Higher level functions
 def remove(path):
     def remove_readonly(func, path, _):
@@ -65,12 +71,15 @@ def remove(path):
         func(path)
 
     shutil.rmtree(path, onerror=remove_readonly)
-    
+
+
 def move(src, dst):
     shutil.move(src, dst)
-    
+
+
 def copy(src, dst):
     shutil.copytree(src, dst)
+
 
 # Test specific utils
 def mkgit(name):
@@ -87,25 +96,28 @@ def mkgit(name):
     remove(name)
     return os.path.abspath(bare).replace('\\', '/')
 
+
 def mkhg(name):
-    os.mkdir(name+'.hg')
-    with cd(name+'.hg'):
+    os.mkdir(name + '.hg')
+    with cd(name + '.hg'):
         popen(['hg', 'init'])
         with open('test', 'w') as f:
             f.write('hello')
         popen(['hg', 'add', 'test'])
         popen(['hg', 'commit', '-m', '"commit 1"'])
 
-    return os.path.abspath(name+'.hg').replace('\\', '/')
+    return os.path.abspath(name + '.hg').replace('\\', '/')
+
 
 def assertls(mbed, dir, tree):
-    tree = ''.join(re.escape(l)+r'.*\n' for l in tree)
+    tree = ''.join(re.escape(l) + r'.*\n' for l in tree)
 
     with cd(dir):
         result = pquery(['python', mbed, 'ls'])
 
     print result
     assert re.match(tree, result, re.MULTILINE)
+
 
 def scm(dir=None):
     if not dir:
@@ -115,6 +127,7 @@ def scm(dir=None):
         return 'git'
     elif os.path.isdir(os.path.join(dir, '.hg')):
         return 'hg'
+
 
 def mkcommit(dir=None, files=[]):
     with cd(dir or os.getcwd()):
@@ -128,6 +141,7 @@ def mkcommit(dir=None, files=[]):
                 popen(['hg', 'add'] + files)
             popen(['hg', 'commit', '-m', 'test commit'])
             popen(['hg', 'push'])
+
 
 # Different repository structures
 @pytest.fixture(params=['git1', 'hg1', 'alt1', 'alt2'])
@@ -178,7 +192,7 @@ def testrepos(mbed, request):
             popen(['hg', 'add', 'test4.lib'])
             popen(['hg', 'commit', '-m', 'test commit'])
             popen(['hg', 'push'])
-    
+
     with cd('test1/test2'):
         with open('test3.lib', 'w') as f:
             with cd('test3'):
@@ -216,4 +230,3 @@ def testrepos(mbed, request):
             popen(['hg', 'push'])
 
     return test1, test2, test3, test4
-
